@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Pathfinding & Maze Lab — A*, Dijkstra, BFS, DFS</title>
+  <meta name="description" content="Interactive pathfinding + maze lab using A*, Dijkstra, BFS, DFS with weighted terrain. Vanilla HTML/CSS/JS." />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -45,6 +46,26 @@
         <button id="stopBtn" class="btn ghost">Stop</button>
         <button id="clearBtn" class="btn ghost">Clear</button>
       </div>
+    </div>
+
+    <!-- Added: About + User Context Bar -->
+    <div class="wrap" style="padding:8px 16px 14px; display:grid; gap:10px;">
+      <section id="about" class="card" style="padding:12px;">
+        <strong>What is this?</strong>
+        <p style="margin:8px 0; color:var(--muted)">
+          An interactive lab for pathfinding and maze generation. Compare A*, Dijkstra, BFS, and DFS on a grid with walls and weighted terrain.
+          <em>Uniqueness:</em> generator‑driven step‑through animations, weighted costs (1–9), 4/8‑neighborhood, zero dependencies.
+        </p>
+        <p style="margin:8px 0; color:var(--muted)">
+          <em>Real‑world analogues:</em> robotics & AGV routing, games AI, maps/logistics routing, evacuation planning.
+          <em>How to use:</em> pick an algorithm, draw walls/weights or generate a maze, then press <span class="kbd">Space</span> or click <strong>Run</strong>.
+          Use <strong>Step</strong> to advance one expansion at a time. Move start/end with the <strong>Drag</strong> tool.
+        </p>
+      </section>
+      <section id="userMeta" class="card" style="padding:10px; display:flex; gap:14px; align-items:center;">
+        <div><strong>Local time:</strong> <span id="userTime">—</span> <span id="userZone" class="note" style="margin-left:6px"></span></div>
+        <div><strong>Location:</strong> <span id="userCoords">(requesting…)</span> <span id="geoMsg" class="note" style="margin-left:6px"></span></div>
+      </section>
     </div>
   </header>
 
@@ -128,10 +149,42 @@
       <div>Built with vanilla HTML/CSS/JS. No frameworks. <span aria-hidden="true">⚡️</span></div>
       <div>Tip: hold <span class="kbd">Cmd/Ctrl</span> while dragging to paint straight lines.</div>
     </div>
+    <div class="wrap" style="padding:0 16px 12px; color:var(--muted); font-size:12px;">
+      <em>Developed by ioazlan01</em>
+    </div>
   </footer>
 </div>
 
 <div aria-live="polite" aria-atomic="true" class="sr-only" id="ariaLive"></div>
+
 <script src="app.js"></script>
+<!-- Lightweight inline script for time + geolocation (kept separate from app logic) -->
+<script>
+  (function(){
+    const timeEl = document.getElementById('userTime');
+    const zoneEl = document.getElementById('userZone');
+    const crdEl  = document.getElementById('userCoords');
+    const msgEl  = document.getElementById('geoMsg');
+    try {
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+      zoneEl.textContent = tz ? `(${tz})` : '';
+      const fmt = new Intl.DateTimeFormat([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      function tick(){ timeEl.textContent = fmt.format(new Date()); }
+      tick(); setInterval(tick, 1000);
+    } catch(e) {}
+
+    if (navigator.geolocation){
+      navigator.geolocation.getCurrentPosition(function(p){
+        const { latitude, longitude } = p.coords;
+        crdEl.textContent = `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
+        msgEl.textContent = '';
+      }, function(err){
+        msgEl.textContent = err.code === 1 ? '(permission denied)' : '(unavailable)';
+      }, { enableHighAccuracy: false, timeout: 6000, maximumAge: 30000 });
+    } else {
+      msgEl.textContent = '(no geolocation support)';
+    }
+  })();
+</script>
 </body>
 </html>
