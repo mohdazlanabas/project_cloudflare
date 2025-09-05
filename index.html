@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pathfinding & Maze Lab — A*, Dijkstra, BFS, DFS</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div id="app" data-theme="dark">
+  <header>
+    <div class="wrap toolbar">
+      <div class="brand">
+        <svg width="26" height="26" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+          <defs>
+            <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#7c93ff"/>
+              <stop offset="100%" stop-color="#3fd1c9"/>
+            </linearGradient>
+          </defs>
+          <rect x="2" y="2" width="60" height="60" rx="14" stroke="url(#g)" stroke-width="3"/>
+          <path d="M18 32h28M32 18v28" stroke="url(#g)" stroke-width="4" stroke-linecap="round"/>
+        </svg>
+        <div>
+          <div>Pathfinding & Maze Lab</div>
+          <div class="note" style="font-size:12px;color:var(--muted);">A*, Dijkstra, BFS, DFS • Recursive Division & DFS Mazes • Weights • 4/8-Neighborhood</div>
+        </div>
+        <span class="badge" aria-hidden="true">Split Files</span>
+      </div>
+      <div class="controls">
+        <div class="seg" role="group" aria-label="Algorithm">
+          <button class="alg" data-alg="astar" aria-pressed="true" title="A* (fast, uses heuristic)">A*</button>
+          <button class="alg" data-alg="dijkstra" aria-pressed="false" title="Dijkstra (weights, no heuristic)">Dijkstra</button>
+          <button class="alg" data-alg="bfs" aria-pressed="false" title="Breadth-First Search">BFS</button>
+          <button class="alg" data-alg="dfs" aria-pressed="false" title="Depth-First Search">DFS</button>
+        </div>
+        <div class="seg" role="group" aria-label="Tool">
+          <button class="tool" data-tool="wall" aria-pressed="true" title="Paint walls (W)">Wall</button>
+          <button class="tool" data-tool="weight" aria-pressed="false" title="Paint weights (E)">Weight</button>
+          <button class="tool" data-tool="erase" aria-pressed="false" title="Erase (R)">Erase</button>
+          <button class="tool" data-tool="drag" aria-pressed="false" title="Move start/end (D)">Drag Start/End</button>
+        </div>
+        <button id="runBtn" class="btn primary">Run</button>
+        <button id="stepBtn" class="btn">Step</button>
+        <button id="stopBtn" class="btn ghost">Stop</button>
+        <button id="clearBtn" class="btn ghost">Clear</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section id="gridWrap" class="card active-border">
+      <div id="grid" role="grid" tabindex="0" aria-label="Grid"></div>
+      <div class="legend">
+        <span class="chip"><span class="dot" style="background:var(--cell-start)"></span>Start</span>
+        <span class="chip"><span class="dot" style="background:var(--cell-end)"></span>End</span>
+        <span class="chip"><span class="dot" style="background:var(--cell-frontier)"></span>Frontier</span>
+        <span class="chip"><span class="dot" style="background:var(--cell-visited)"></span>Visited</span>
+        <span class="chip"><span class="dot" style="background:var(--cell-path)"></span>Path</span>
+        <span class="chip"><span class="dot" style="background:var(--cell-wall)"></span>Wall</span>
+        <span class="chip"><span class="dot" style="background:var(--cell-weight)"></span>Weight</span>
+      </div>
+    </section>
+
+    <aside id="side">
+      <div class="card" style="padding: var(--pad);">
+        <div class="row"><strong>Run Settings</strong> <span class="pill" id="status">idle</span></div>
+        <div class="field"><label for="speed">Animation speed</label><input id="speed" type="range" min="0" max="100" value="40"></div>
+        <div class="field"><label for="diag"><input id="diag" type="checkbox"> Allow diagonal movement</label></div>
+        <div class="field"><label for="heur">Heuristic</label>
+          <select id="heur">
+            <option value="manhattan">Manhattan</option>
+            <option value="euclid">Euclidean</option>
+            <option value="chebyshev">Chebyshev</option>
+          </select>
+        </div>
+        <div class="field"><label for="cols">Grid size</label>
+          <div class="kv"><span>Cols × Rows</span>
+            <span><input id="cols" type="number" min="10" max="80" value="40" style="width:68px"> × <input id="rows" type="number" min="10" max="60" value="25" style="width:68px"></span>
+          </div>
+        </div>
+        <div class="group">
+          <div class="row"><strong>Maze & Terrain</strong><span class="note">Generate walls/weights</span></div>
+          <div class="controls" style="justify-content:flex-start">
+            <button id="mazeDiv" class="btn">Recursive Division</button>
+            <button id="mazeDFS" class="btn">DFS Maze</button>
+            <button id="scatter" class="btn">Scatter Walls</button>
+            <button id="weights" class="btn">Random Weights</button>
+          </div>
+        </div>
+        <div class="group">
+          <div class="row"><strong>Theme & IO</strong><span class="note">Save/Load & display</span></div>
+          <div class="controls" style="justify-content:flex-start">
+            <button id="themeBtn" class="btn">Toggle Theme</button>
+            <button id="exportBtn" class="btn">Export</button>
+            <label class="btn" for="importFile" style="cursor:pointer">Import</label>
+            <input id="importFile" type="file" accept="application/json" style="display:none">
+          </div>
+        </div>
+        <div class="group">
+          <div class="row"><strong>Stats</strong><span class="note">live</span></div>
+          <div class="kv"><span>Visited</span><span id="statVisited">0</span></div>
+          <div class="kv"><span>Frontier peak</span><span id="statFrontier">0</span></div>
+          <div class="kv"><span>Path length</span><span id="statPath">0</span></div>
+          <div class="kv"><span>Runtime</span><span id="statRuntime">0 ms</span></div>
+        </div>
+      </div>
+
+      <div class="card" style="padding: var(--pad);">
+        <strong>Shortcuts</strong>
+        <ul style="margin:8px 0 0 18px; padding:0; line-height:1.6; color:var(--muted)">
+          <li><span class="kbd">Space</span> Run / Stop</li>
+          <li><span class="kbd">S</span> Step</li>
+          <li><span class="kbd">W</span> Wall • <span class="kbd">E</span> Weight • <span class="kbd">R</span> Erase • <span class="kbd">D</span> Drag</li>
+          <li><span class="kbd">1</span> A* • <span class="kbd">2</span> Dijkstra • <span class="kbd">3</span> BFS • <span class="kbd">4</span> DFS</li>
+          <li><span class="kbd">Cmd/Ctrl</span> + drag: paint straight line</li>
+        </ul>
+        <div class="group">
+          <strong>Event Log</strong>
+          <div id="log" class="log" aria-live="polite"></div>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <footer>
+    <div class="wrap" style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 16px;">
+      <div>Built with vanilla HTML/CSS/JS. No frameworks. <span aria-hidden="true">⚡️</span></div>
+      <div>Tip: hold <span class="kbd">Cmd/Ctrl</span> while dragging to paint straight lines.</div>
+    </div>
+  </footer>
+</div>
+
+<div aria-live="polite" aria-atomic="true" class="sr-only" id="ariaLive"></div>
+<script src="app.js"></script>
+</body>
+</html>
